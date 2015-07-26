@@ -18,23 +18,27 @@ public class MovementOnPlane : MonoBehaviour
 	float
 		LateralMoveSpeed, RotateSpeed, MaxRotationAngle, ResetRotationSpeed, LookSpeed, ReticleSpeed;
 
+	float width;
+
 	// Use this for initialization
 	void Start ()
 	{
+		float reticleDistanceFromCamera = Vector3.Distance (ReticlePlane.position, Camera.main.transform.position);
 
+		width = Vector2.Distance (Camera.main.ViewportToWorldPoint (new Vector3 (0.0f, 0.5f, reticleDistanceFromCamera)), Camera.main.ViewportToWorldPoint (new Vector3 (1.0f, 0.5f, reticleDistanceFromCamera))) / 2;
 		//build the bounds
 		TravelPlaneBounds = new Bounds ();
 		TravelPlaneBounds.Encapsulate (TravelPlaneQuad.GetComponent<Renderer> ().bounds);
-		Debug.Log (TravelPlaneBounds.size.x);
+		Debug.Log (width);
 	}
 
 	void FixedUpdate ()
 	{
 		#region Movement
-		float Xpos = Input.GetAxis ("Horizontal") / TravelPlaneBounds.size.x;
-		float Ypos = Input.GetAxis ("Vertical") / TravelPlaneBounds.size.y;
+		float Xpos = Input.GetAxis ("Horizontal");// / width;
+		float Ypos = Input.GetAxis ("Vertical");// / TravelPlaneBounds.size.y;
 
-		float reticleX = Input.GetAxis ("Horizontal");
+		float reticleX = Input.GetAxis ("Horizontal") * width;
 		float reticleY = Input.GetAxis ("Vertical");
 		//Move reticle
 		ReticlePlane.localPosition = Vector3.Lerp (ReticlePlane.localPosition, new Vector3 (reticleX, reticleY, ReticlePlane.localPosition.z), Time.deltaTime * ReticleSpeed);
@@ -59,6 +63,7 @@ public class MovementOnPlane : MonoBehaviour
 			PlaneBody.Rotate (Vector3.forward, Xrot);
 		}
 
+		//Body rotation during turns
 		if (Mathf.Abs (Input.GetAxis ("Horizontal")) <= 0.1f) {
 			PlaneBody.localRotation = Quaternion.Lerp (PlaneBody.localRotation, Quaternion.identity, Time.smoothDeltaTime * ResetRotationSpeed);
 		}
