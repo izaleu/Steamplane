@@ -1,11 +1,9 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-public class MovementOnPlane : MonoBehaviour
+//Controls the lateral and vertical movement of the aircraft.
+public class AircraftMovement : MonoBehaviour
 {
-	Bounds
-		TravelPlaneBounds;
-
 	[SerializeField]
 	Transform
 		TravelPlaneCenter, ReticlePlane, PlaneBody;
@@ -15,6 +13,8 @@ public class MovementOnPlane : MonoBehaviour
 		LateralMoveSpeed, RotateSpeed, MaxRotationAngle, ResetRotationSpeed, LookSpeed, ReticleSpeed;
 
 	float ViewportWidth, ViewportHeight;
+
+	float AIAxis_Horizontal, AIAxis_Vertical;
 
 	// Use this for initialization
 	void Start ()
@@ -27,12 +27,14 @@ public class MovementOnPlane : MonoBehaviour
 
 	void FixedUpdate ()
 	{
-		#region Movement
-		float Xpos = Input.GetAxis ("Horizontal") * ViewportWidth / 10;
-		float Ypos = Input.GetAxis ("Vertical");// / TravelPlaneBounds.size.y;
+		Reason ();
 
-		float reticleX = Input.GetAxis ("Horizontal") * ViewportWidth;
-		float reticleY = Input.GetAxis ("Vertical") * ViewportHeight;
+		#region Movement
+		float Xpos = AIAxis_Horizontal * ViewportWidth / 10;
+		float Ypos = AIAxis_Vertical;// / TravelPlaneBounds.size.y;
+
+		float reticleX = AIAxis_Horizontal * ViewportWidth;
+		float reticleY = AIAxis_Vertical * ViewportHeight;
 
 		//Move reticle
 		ReticlePlane.localPosition = Vector3.Lerp (ReticlePlane.localPosition, new Vector3 (reticleX, reticleY, ReticlePlane.localPosition.z), Time.deltaTime * ReticleSpeed);
@@ -48,7 +50,7 @@ public class MovementOnPlane : MonoBehaviour
 
 		transform.LookAt (midlookPos);
 
-		float Xrot = Input.GetAxis ("Horizontal") * Mathf.Abs (Input.GetAxis ("Horizontal")) * RotateSpeed;
+		float Xrot = AIAxis_Horizontal * Mathf.Abs (AIAxis_Horizontal) * RotateSpeed;
 
 		if (PlaneBody.localRotation.z > MaxRotationAngle) {
 			Xrot = MaxRotationAngle;
@@ -59,10 +61,37 @@ public class MovementOnPlane : MonoBehaviour
 		}
 
 		//Body rotation during turns
-		if (Mathf.Abs (Input.GetAxis ("Horizontal")) <= 0.1f) {
+		if (Mathf.Abs (AIAxis_Horizontal) <= 0.1f) {
 			PlaneBody.localRotation = Quaternion.Lerp (PlaneBody.localRotation, Quaternion.identity, Time.smoothDeltaTime * ResetRotationSpeed);
 		}
 		#endregion
+
+	}
+
+	void OnCollisionEnter (Collision collider)
+	{
+		//Debug.Log (collider.gameObject.name);
+		Vector3 AwayFromObstacle = transform.position - collider.transform.position;
+		AIAxis_Horizontal = AwayFromObstacle.x;
+		AIAxis_Vertical = AwayFromObstacle.y;
+	}
+
+	void OnCollisionStay (Collision collider)
+	{
+		//Debug.Log (collider.gameObject.name);
+		Vector3 AwayFromObstacle = transform.position - collider.transform.position;
+		AIAxis_Horizontal = AwayFromObstacle.x;
+		AIAxis_Vertical = AwayFromObstacle.y;
+	}
+	void OnCollisionExit (Collision collider)
+	{
+		//Debug.Log (collider.gameObject.name);
+		AIAxis_Horizontal = 0.0f;
+		AIAxis_Vertical = 0.0f;
+	}
+
+	void Reason ()
+	{
 
 	}
 }
